@@ -41,6 +41,11 @@ type Config struct {
 	StackTraceLevel string `json:"stack_trace_level" yaml:"stack_trace_level" env:"LOG_STACK_TRACE_LEVEL"`
 	// Keys selects a key naming scheme: "default", "elastic", "datadog".
 	Keys string `json:"keys" yaml:"keys" env:"LOG_KEYS"`
+	// Dir enables a rotating log file in this directory (see FileConfig).
+	// Shorthand for File.Dir.
+	Dir string `json:"dir" yaml:"dir" env:"LOG_DIR"`
+	// File configures the rotating log file. Used when Dir or File.Dir is set.
+	File FileConfig `json:"file" yaml:"file"`
 }
 
 // ConfigFromEnv reads LOG_* environment variables. It also falls back to the
@@ -86,6 +91,16 @@ func ConfigFromLookup(lookup func(string) (string, bool)) Config {
 		SamplingThereafter: getInt("LOG_SAMPLING_THEREAFTER"),
 		StackTraceLevel:    get("LOG_STACK_TRACE_LEVEL"),
 		Keys:               get("LOG_KEYS"),
+		Dir:                get("LOG_DIR"),
+		File: FileConfig{
+			Filename:   get("LOG_FILE"),
+			MaxSizeMB:  getInt("LOG_FILE_MAX_SIZE_MB"),
+			MaxBackups: getInt("LOG_FILE_MAX_BACKUPS"),
+			MaxAgeDays: getInt("LOG_FILE_MAX_AGE_DAYS"),
+			Daily:      getBool("LOG_FILE_DAILY"),
+			Compress:   getBool("LOG_FILE_COMPRESS"),
+			Tee:        getBool("LOG_FILE_TEE"),
+		},
 	}
 	if v := get("LOG_REDACT_KEYS"); v != "" {
 		c.Redact = true
@@ -161,6 +176,13 @@ func (c Config) Options() []Option {
 		if l, err := ParseLevel(c.StackTraceLevel); err == nil {
 			opts = append(opts, WithStackTrace(l))
 		}
+	}
+	if c.Dir != "" || c.File.Dir != "" {
+		f := c.File
+		if f.Dir == "" {
+			f.Dir = c.Dir
+		}
+		opts = append(opts, WithFile(f))
 	}
 	switch strings.ToLower(c.Keys) {
 	case "elastic", "ecs":

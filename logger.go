@@ -47,6 +47,22 @@ func New(opts ...Option) (*Logger, error) {
 	if ew, ok := o.output.(*errWriter); ok {
 		return nil, fmt.Errorf("logger: open output: %w", ew.err)
 	}
+	if o.file != nil {
+		fw, err := NewRotatingWriter(o.file.withDefaults(o.service))
+		if err != nil {
+			return nil, err
+		}
+		if o.file.Tee {
+			other := o.output
+			if other == nil {
+				other = os.Stderr
+			}
+			o.output = &teeWriter{file: fw, other: other}
+		} else {
+			o.output = fw
+		}
+		o.closer = fw
+	}
 	if o.output == nil {
 		o.output = os.Stderr
 	}

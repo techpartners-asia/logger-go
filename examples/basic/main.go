@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"errors"
+	"os"
 	"time"
 
 	"github.com/techpartners-asia/logger-go"
@@ -19,6 +20,8 @@ func main() {
 		logger.WithVersion("1.0.0"),
 		logger.WithRedaction(),
 		logger.WithStackTrace(logger.LevelError),
+		// Also keep a rotating file: ./logs/example.log (LOG_DIR overrides).
+		logger.WithFile(logger.FileConfig{Dir: envOr("LOG_DIR", "logs"), Tee: true}),
 	)
 	defer log.Close()
 	logger.SetDefault(log)
@@ -55,4 +58,11 @@ func process(ctx context.Context) {
 	// No logger passed around: pick it from the context.
 	logger.FromContext(ctx).InfoContext(ctx, "processing", "step", 1)
 	logger.InfoContext(ctx, "processing", "step", 2) // package-level works too
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

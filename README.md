@@ -31,6 +31,7 @@ modules under `adapters/` so importing the logger never drags in Fiber or gRPC.
 - [Redaction](#redaction)
 - [Sampling](#sampling)
 - [Stack traces](#stack-traces)
+- [Writing to files](#writing-to-files)
 - [Multiple outputs](#multiple-outputs)
 - [Interop: slog, std log, io.Writer](#interop-slog-std-log-iowriter)
 - [HTTP middleware (net/http)](#http-middleware-nethttp)
@@ -126,6 +127,8 @@ log, err := logger.New(
 	logger.WithLevel(logger.LevelDebug),        // or WithLevelString("debug")
 	logger.WithFormat(logger.FormatJSON),
 	logger.WithOutput(os.Stdout),               // default os.Stderr
+	logger.WithDir("/var/log/orders"),          // rotating file <dir>/<service>.log
+	logger.WithFile(logger.FileConfig{Dir: "/var/log/orders", Compress: true, Tee: true}),
 	logger.WithService("orders"),               // "service" field
 	logger.WithEnv("staging"),                  // "env" field
 	logger.WithVersion("1.4.0"),                // "version" field
@@ -173,6 +176,14 @@ output file that cannot be opened.
 | `LOG_SAMPLING_INITIAL` / `LOG_SAMPLING_THEREAFTER` | int | off |
 | `LOG_STACK_TRACE_LEVEL` | level name | off |
 | `LOG_KEYS` | `default` `elastic` `datadog` | `default` |
+| `LOG_DIR` | directory; enables a rotating log file | off |
+| `LOG_FILE` | file name inside `LOG_DIR` | `<service>.log` |
+| `LOG_FILE_MAX_SIZE_MB` | rotate above this size | `100` |
+| `LOG_FILE_MAX_BACKUPS` | rotated files to keep | `10` |
+| `LOG_FILE_MAX_AGE_DAYS` | delete rotated files older than this | `30` |
+| `LOG_FILE_DAILY` | bool; also rotate at midnight | `false` |
+| `LOG_FILE_COMPRESS` | bool; gzip rotated files | `false` |
+| `LOG_FILE_TEE` | bool; also write to stderr | `false` |
 
 Recommended per environment:
 
@@ -359,6 +370,48 @@ console format prints it on indented lines under the record.
 
 ---
 
+## Writing to files
+
+Give the SDK a directory at init and it manages the file for you:
+
+```go
+log := logger.MustNew(
+	logger.WithService("orders-api"),
+	logger.WithDir("/var/log/techpartners"),   // -> /var/log/techpartners/orders-api.log
+)
+defer log.Close() // flushes and closes the file
+```
+
+The directory is created if missing. The file rotates at 100 MB, 10 backups
+are kept for 30 days, and backups are named `orders-api-20261016T122446.489.log`.
+Tune it with `WithFile`:
+
+```go
+logger.WithFile(logger.FileConfig{
+	Dir:        "/var/log/techpartners",
+	Filename:   "orders.log",   // default <service>.log
+	MaxSizeMB:  50,             // rotate above this size; -1 disables
+	MaxBackups: 7,              // -1 keeps all
+	MaxAgeDays: 14,             // -1 keeps all
+	Daily:      true,           // also rotate at local midnight
+	Compress:   true,           // gzip backups in the background
+	Tee:        true,           // keep writing to stderr as well
+})
+```
+
+Or from the environment: `LOG_DIR=/var/log/techpartners LOG_FILE_COMPRESS=true`.
+In a config file the same fields sit under `log.dir` / `log.file`.
+
+`Tee` is the usual choice in containers: stdout/stderr is shipped by the
+platform while the file is there for `tail -f` on the box. Without `Tee` the
+file is the only output.
+
+The writer is exported as `logger.RotatingWriter` for use with any logger,
+and `WithOutputCloser` still accepts third-party writers such as lumberjack
+if you prefer them.
+
+---
+
 ## Multiple outputs
 
 Fan out to several destinations with different levels using the exported
@@ -376,9 +429,7 @@ log := logger.MustNew(
 )
 ```
 
-For file rotation use any `io.WriteCloser` such as
-`gopkg.in/natefinch/lumberjack.v2` with `WithOutputCloser(w)`; `Close` will
-close it.
+For file rotation see [Writing to files](#writing-to-files).
 
 Exported handlers, all usable standalone with plain slog too:
 `NewConsoleHandler`, `NewRedactHandler`, `NewSamplingHandler`,
@@ -653,6 +704,7 @@ Layout:
 logger.go            Logger, New, options wiring, lifecycle
 options.go           Option funcs, KeyNames presets
 config.go            Config struct, env loading
+file.go              RotatingWriter, FileConfig, WithDir/WithFile
 level.go             levels, parsing, names
 attrs.go             Attr helpers, well-known keys
 context.go           NewContext/FromContext, ContextWithFields, contextHandler

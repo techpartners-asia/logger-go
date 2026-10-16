@@ -45,6 +45,7 @@ type options struct {
 	format      Format
 	output      io.Writer
 	closer      io.Closer
+	file        *FileConfig
 	color       *bool // nil = auto
 	addSource   bool
 	timeFormat  string

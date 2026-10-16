@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `WithDir` / `WithFile` and `FileConfig`: built-in rotating log file (size
+  and daily rotation, max backups, max age, gzip, tee to stderr). Exported
+  `RotatingWriter`. `LOG_DIR` and `LOG_FILE_*` environment variables;
+  `Config.Dir` / `Config.File`.
+
 ## [0.1.0] - 2026-10-16
 
 ### Added
