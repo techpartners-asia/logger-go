@@ -1,4 +1,4 @@
-MODULES := . ./adapters/fiber ./adapters/gin ./adapters/grpc ./adapters/otel
+MODULES := . ./adapters/fiber ./adapters/gin ./adapters/echo ./adapters/chi ./adapters/mux ./adapters/grpc ./adapters/resty ./adapters/gorm ./adapters/pgx ./adapters/otel
 
 .PHONY: test lint bench examples tidy fmt
 

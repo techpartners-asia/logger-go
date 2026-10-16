@@ -38,7 +38,12 @@ modules under `adapters/` so importing the logger never drags in Fiber or gRPC.
 - [Adapters](#adapters)
   - [Fiber v3](#fiber-v3)
   - [Gin](#gin)
+  - [Echo v4](#echo-v4)
+  - [chi, gorilla/mux and other net/http routers](#chi-gorillamux-and-other-nethttp-routers)
   - [gRPC](#grpc)
+  - [Resty v3](#resty-v3)
+  - [GORM](#gorm)
+  - [pgx](#pgx)
   - [OpenTelemetry](#opentelemetry)
 - [Testing with logtest](#testing-with-logtest)
 - [Conventions for services](#conventions-for-services)
@@ -504,16 +509,26 @@ Set `TransportOptions{Level: logger.LevelInfo}` to see successes in production.
 
 Each adapter is a separate Go module. Import only what you use.
 
-| Adapter | Import | Module |
+| Kind | Adapter | Import path (all under `github.com/techpartners-asia/logger-go/`) |
 |---|---|---|
-| Fiber v3 | `github.com/techpartners-asia/logger-go/adapters/fiber` | `adapters/fiber` |
-| Gin | `github.com/techpartners-asia/logger-go/adapters/gin` | `adapters/gin` |
-| gRPC | `github.com/techpartners-asia/logger-go/adapters/grpc` | `adapters/grpc` |
-| OpenTelemetry | `github.com/techpartners-asia/logger-go/adapters/otel` | `adapters/otel` |
+| HTTP server | net/http, std mux, httprouter, ... | `httplog` (in core) |
+| HTTP server | Fiber v3 | `adapters/fiber` |
+| HTTP server | Gin | `adapters/gin` |
+| HTTP server | Echo v4 | `adapters/echo` |
+| HTTP server | chi v5 | `adapters/chi` |
+| HTTP server | gorilla/mux | `adapters/mux` |
+| RPC | gRPC server + client | `adapters/grpc` |
+| HTTP client | net/http `RoundTripper` | `httplog` (in core) |
+| HTTP client | Resty v3 | `adapters/resty` |
+| Database | GORM | `adapters/gorm` |
+| Database | pgx v5 | `adapters/pgx` |
+| Tracing | OpenTelemetry | `adapters/otel` |
 
-All HTTP-style adapters behave like `httplog`: same field names, same
+All HTTP server adapters behave like `httplog`: same field names, same
 level-by-status rule, same `X-Request-ID` handling, panic recovery, and skip
-lists, so dashboards work across frameworks unchanged.
+lists, so dashboards work across frameworks unchanged. Client and database
+adapters pick up `request_id` and other context fields automatically when you
+pass the request context.
 
 ### Fiber v3
 
@@ -550,6 +565,59 @@ r.GET("/items/:id", func(c *gin.Context) {
 Also logs `route` (`/items/:id`) next to the concrete `path`, and `c.Errors`
 under `error`.
 
+### Echo v4
+
+```go
+import echolog "github.com/techpartners-asia/logger-go/adapters/echo"
+
+e := echo.New()
+e.Use(echolog.New(log, echolog.Config{SkipPaths: []string{"/healthz"}}))
+
+e.GET("/items/:id", func(c echo.Context) error {
+	echolog.FromCtx(c).Info("hit")
+	return c.JSON(200, item)
+})
+```
+
+Handler errors go through Echo's `HTTPErrorHandler` first, so the logged
+`status` is the one the client saw. Panics are recovered and logged, so
+`middleware.Recover()` is optional. Logs `route` (`/items/:id`) too.
+
+### chi, gorilla/mux and other net/http routers
+
+Anything built on `http.Handler` uses `httplog.Middleware` directly:
+
+```go
+mux := http.NewServeMux()                 // std library
+handler := httplog.Middleware(log)(mux)
+
+r := httprouter.New()                     // httprouter, bunrouter, ...
+http.ListenAndServe(":8080", httplog.Middleware(log)(r))
+```
+
+The chi and mux adapters are thin wrappers that additionally log the matched
+route pattern, which the router only knows after dispatch:
+
+```go
+import chilog "github.com/techpartners-asia/logger-go/adapters/chi"
+
+r := chi.NewRouter()
+r.Use(chilog.Middleware(log))             // adds route="/users/{id}"
+r.Get("/users/{id}", func(w http.ResponseWriter, r *http.Request) {
+	chilog.FromRequest(r).Info("hit")
+})
+```
+
+```go
+import muxlog "github.com/techpartners-asia/logger-go/adapters/mux"
+
+r := mux.NewRouter()
+r.Use(muxlog.Middleware(log))             // adds route="/users/{id}", route_name="getUser"
+r.HandleFunc("/users/{id}", h).Name("getUser")
+```
+
+Both accept `httplog.Options`.
+
 ### gRPC
 
 ```go
@@ -573,6 +641,56 @@ Fields: `grpc_service`, `grpc_method`, `grpc_type`, `grpc_code`,
 metadata both ways. Level is derived from the status code
 (`grpclog.DefaultLevelFor`, overridable): client-caused codes INFO,
 retryable WARN, server faults ERROR. Panics become `codes.Internal`.
+
+### Resty v3
+
+Resty is the HTTP client used by the other techpartners SDKs.
+
+```go
+import restylog "github.com/techpartners-asia/logger-go/adapters/resty"
+
+client := restylog.Install(resty.New(), log, restylog.Config{
+	Level:           logger.LevelInfo,         // default DEBUG
+	SlowThreshold:   2 * time.Second,
+	LogResponseBody: false,                    // bodies off by default
+})
+
+resp, err := client.R().SetContext(ctx).Get(url)   // ctx carries request_id
+```
+
+One line per call with `method`, `url`, `status`, `duration_ms`, `bytes`,
+`attempt` on retries, `error` on transport failure. `X-Request-ID` is
+forwarded from the context. Resty's own diagnostics (retries, redirects) go
+through the same logger via `SetLogger`.
+
+### GORM
+
+```go
+import gormlog "github.com/techpartners-asia/logger-go/adapters/gorm"
+
+db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	Logger: gormlog.New(log, gormlog.Config{SlowThreshold: 200 * time.Millisecond}),
+})
+```
+
+Queries log at DEBUG (`sql`, `rows`, `duration_ms`), slow ones at WARN with
+`slow=true`, failures at ERROR. `ErrRecordNotFound` is not treated as an
+error. Use `db.WithContext(ctx)` so request fields appear. Set
+`ParameterizedQueries: true` to log `?` instead of bound values.
+
+### pgx
+
+```go
+import pgxlog "github.com/techpartners-asia/logger-go/adapters/pgx"
+
+cfg, _ := pgxpool.ParseConfig(dsn)
+cfg.ConnConfig.Tracer = pgxlog.NewTracer(log, pgxlog.Config{SlowThreshold: 200 * time.Millisecond})
+pool, _ := pgxpool.NewWithConfig(ctx, cfg)
+```
+
+Same levels and fields as the GORM adapter. Arguments are not logged unless
+`LogArgs: true`. `pgxlog.NewLogger(log)` implements `tracelog.Logger` if you
+already use `tracelog.TraceLog`.
 
 ### OpenTelemetry
 
@@ -717,7 +835,7 @@ handler_multi.go     MultiHandler, LevelHandler
 stdlog.go            Writer, Std, RedirectStdLog
 httplog/             net/http middleware and RoundTripper
 logtest/             Recorder for tests
-adapters/fiber|gin|grpc|otel   separate modules
+adapters/*           separate modules: fiber gin echo chi mux grpc resty gorm pgx otel
 examples/basic, examples/http
 ```
 
@@ -769,6 +887,7 @@ git tag adapters/fiber/v0.1.0
 git tag adapters/gin/v0.1.0
 git tag adapters/grpc/v0.1.0
 git tag adapters/otel/v0.1.0
+# ... one tag per adapter you changed (echo, chi, mux, resty, gorm, pgx)
 git push --tags
 ```
 

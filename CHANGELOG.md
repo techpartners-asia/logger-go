@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Adapters: Echo v4, chi v5, gorilla/mux (route patterns on top of httplog),
+  Resty v3 client, GORM logger, pgx v5 tracer and tracelog logger.
 - `WithDir` / `WithFile` and `FileConfig`: built-in rotating log file (size
   and daily rotation, max backups, max age, gzip, tee to stderr). Exported
   `RotatingWriter`. `LOG_DIR` and `LOG_FILE_*` environment variables;
