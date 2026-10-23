@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-23
+
 ### Added
 - Adapters: Echo v4, chi v5, gorilla/mux (route patterns on top of httplog),
   Resty v3 client, GORM logger, pgx v5 tracer and tracelog logger.
@@ -13,6 +15,8 @@ All notable changes to this project are documented here. The format follows
   and daily rotation, max backups, max age, gzip, tee to stderr). Exported
   `RotatingWriter`. `LOG_DIR` and `LOG_FILE_*` environment variables;
   `Config.Dir` / `Config.File`.
+- Automated releases: every push to `main` that passes CI tags the core and
+  changed adapters and publishes a GitHub release.
 
 ## [0.1.0] - 2026-10-16
 
@@ -33,3 +37,7 @@ All notable changes to this project are documented here. The format follows
 - Adapters as separate modules: Fiber v3, Gin, gRPC (server and client
   interceptors), OpenTelemetry trace correlation.
 - Examples: `examples/basic`, `examples/http`.
+
+[Unreleased]: https://github.com/techpartners-asia/logger-go/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/techpartners-asia/logger-go/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/techpartners-asia/logger-go/releases/tag/v0.1.0
