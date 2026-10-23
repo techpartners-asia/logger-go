@@ -54,3 +54,64 @@ jobs:
         with:
           version: latest
           args: --timeout=5m
+
+  release:
+    # Every push to main that passes CI becomes a new version. The bump is
+    # patch by default; put #minor or #major in any commit message since the
+    # last release to bump higher, or [skip release] in the head commit to skip.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [core, adapters, lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compute next version
+        id: version
+        run: |
+          prev=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$prev" ]; then
+            echo "version=v0.1.0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          log=$(git log --format=%B "$prev..HEAD")
+          if [ -z "$log" ] || git log -1 --format=%B | grep -qF '[skip release]'; then
+            echo "Nothing to release since $prev"
+            exit 0
+          fi
+          IFS=. read -r major minor patch <<<"${prev#v}"
+          if grep -qE '#major|BREAKING CHANGE' <<<"$log"; then
+            major=$((major + 1)); minor=0; patch=0
+          elif grep -qE '#minor' <<<"$log"; then
+            minor=$((minor + 1)); patch=0
+          else
+            patch=$((patch + 1))
+          fi
+          echo "prev=$prev" >> "$GITHUB_OUTPUT"
+          echo "version=v$major.$minor.$patch" >> "$GITHUB_OUTPUT"
+      - name: Tag and publish release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PREV: ${{ steps.version.outputs.prev }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          tags=("$VERSION")
+          for dir in adapters/*/; do
+            m=$(basename "$dir")
+            if [ -z "$PREV" ] || ! git diff --quiet "$PREV" HEAD -- "$dir"; then
+              tags+=("adapters/$m/$VERSION")
+            fi
+          done
+          for t in "${tags[@]}"; do git tag -a "$t" -m "$t"; done
+          git push origin "${tags[@]}"
+          notes_from=()
+          [ -n "$PREV" ] && notes_from=(--notes-start-tag "$PREV")
+          gh release create "$VERSION" --title "$VERSION" --generate-notes "${notes_from[@]}"
