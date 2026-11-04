@@ -431,7 +431,7 @@ func (l *Logger) log(ctx context.Context, level Level, msg string, args []any) {
 	var pcs [1]uintptr
 	runtime.Callers(3, pcs[:])
 	r := slog.NewRecord(time.Now(), level, msg, pcs[0])
-	r.Add(args...)
+	r.Add(promoteErrors(args)...)
 	_ = l.h.Handle(ctx, r)
 }
 

@@ -107,6 +107,26 @@ func TestWithGroupAndErr(t *testing.T) {
 	}
 }
 
+func TestBareErrorArg(t *testing.T) {
+	l, buf := newJSON(t)
+	err := errors.New("card declined")
+
+	l.Error("charge failed", err, "order_id", 991)
+	l.Info("retry", "cause", err)
+	l.With(err).Warn("degraded")
+
+	ls := lines(t, buf)
+	if ls[0]["error"] != "card declined" || ls[0]["order_id"] != float64(991) || ls[0]["!BADKEY"] != nil {
+		t.Errorf("bare error = %v", ls[0])
+	}
+	if ls[1]["cause"] != "card declined" || ls[1]["error"] != nil {
+		t.Errorf("error as value = %v", ls[1])
+	}
+	if ls[2]["error"] != "card declined" {
+		t.Errorf("With(err) = %v", ls[2])
+	}
+}
+
 func TestSourceIsCaller(t *testing.T) {
 	l, buf := newJSON(t, WithSource(true))
 	l.Info("x")

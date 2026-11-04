@@ -2,6 +2,7 @@ package logger
 
 import (
 	"log/slog"
+	"slices"
 	"time"
 )
 
@@ -80,11 +81,33 @@ func argsToAttrs(args []any) []Attr {
 		return nil
 	}
 	var r slog.Record
-	r.Add(args...)
+	r.Add(promoteErrors(args)...)
 	attrs := make([]Attr, 0, r.NumAttrs())
 	r.Attrs(func(a Attr) bool {
 		attrs = append(attrs, a)
 		return true
 	})
 	return attrs
+}
+
+// promoteErrors turns an error passed where a key is expected into Err(err),
+// so log.Error("charge failed", err) prints error="...". args is copied only
+// when it holds such an error.
+func promoteErrors(args []any) []any {
+	var out []any
+	for i := 0; i < len(args); i++ {
+		switch a := args[i].(type) {
+		case string:
+			i++ // skip the value that follows a key
+		case error:
+			if out == nil {
+				out = slices.Clone(args)
+			}
+			out[i] = Err(a)
+		}
+	}
+	if out == nil {
+		return args
+	}
+	return out
 }

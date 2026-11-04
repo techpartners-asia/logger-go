@@ -25,7 +25,7 @@
 //
 //	log.Info("server started", "port", 8080)
 //	log.With("user_id", 42).Warn("quota almost reached", "used", 0.95)
-//	log.Error("charge failed", logger.Err(err), "order_id", id)
+//	log.Error("charge failed", err, "order_id", id)
 //
 // Configuration can also come entirely from the environment:
 //

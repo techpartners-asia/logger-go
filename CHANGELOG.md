@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-04
+
+### Added
+- An `error` passed where a key is expected is logged under `"error"`:
+  `log.Error("charge failed", err)` prints `"error":"card declined"` instead
+  of `!BADKEY`. Works in every log method, `With` and `ContextWith`.
+
 ## [0.2.0] - 2026-10-23
 
 ### Added
@@ -38,6 +45,7 @@ All notable changes to this project are documented here. The format follows
   interceptors), OpenTelemetry trace correlation.
 - Examples: `examples/basic`, `examples/http`.
 
-[Unreleased]: https://github.com/techpartners-asia/logger-go/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/techpartners-asia/logger-go/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/techpartners-asia/logger-go/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/techpartners-asia/logger-go/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/techpartners-asia/logger-go/releases/tag/v0.1.0

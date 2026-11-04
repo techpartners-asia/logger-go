@@ -79,7 +79,7 @@ func main() {
 
 	log.Info("server started", "port", 8080)
 	log.With("user_id", 42).Warn("quota almost reached", "used", 0.95)
-	log.Error("charge failed", logger.Err(errors.New("card declined")), "order_id", 991)
+	log.Error("charge failed", errors.New("card declined"), "order_id", 991)
 }
 ```
 
@@ -292,7 +292,14 @@ log.Infof / Debugf / ...(format, a...)    // for migrating fmt-style code
 ```
 
 `args` follow slog: alternating `"key", value` pairs and/or `logger.Attr`
-values. Attribute constructors are re-exported so you rarely import slog:
+values. An `error` passed on its own is logged under `"error"`:
+
+```go
+log.Error("charge failed", err, "order_id", 991)
+// {"level":"ERROR","msg":"charge failed","error":"card declined","order_id":991}
+```
+
+Attribute constructors are re-exported so you rarely import slog:
 
 ```go
 logger.String, Int, Int64, Uint64, Float64, Bool, Time, Any, Group
@@ -836,10 +843,10 @@ Rules of thumb:
 
 | You wrote | Write now |
 |---|---|
-| `zap.L().Info("x", zap.String("k", v), zap.Error(err))` | `log.Info("x", "k", v, logger.Err(err))` |
+| `zap.L().Info("x", zap.String("k", v), zap.Error(err))` | `log.Info("x", "k", v, err)` |
 | `logger.With(zap.String("k", v))` | `log.With("k", v)` |
 | `zerolog.Ctx(ctx).Info().Str("k", v).Msg("x")` | `logger.FromContext(ctx).Info("x", "k", v)` |
-| `log.Info().Err(err).Msg("x")` | `log.Error("x", logger.Err(err))` |
+| `log.Info().Err(err).Msg("x")` | `log.Error("x", err)` |
 | `logrus.WithFields(logrus.Fields{"k": v}).Info("x")` | `log.Info("x", "k", v)` |
 | `logrus.WithError(err).Error("x")` | `log.WithError(err).Error("x")` |
 | `zap.Sugar().Infof("n=%d", n)` | `log.Infof("n=%d", n)` (then move to attributes) |

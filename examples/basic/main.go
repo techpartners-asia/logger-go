@@ -46,7 +46,7 @@ func main() {
 	process(ctx)
 
 	// Errors get a stack when WithStackTrace is enabled.
-	log.Error("charge failed", logger.Err(errors.New("card declined")), "order_id", 991)
+	log.Error("charge failed", errors.New("card declined"), "order_id", 991)
 
 	// Timing helper.
 	start := time.Now()
