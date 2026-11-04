@@ -1,6 +1,7 @@
 MODULES := . ./adapters/fiber ./adapters/gin ./adapters/echo ./adapters/chi ./adapters/mux ./adapters/grpc ./adapters/resty ./adapters/gorm ./adapters/pgx ./adapters/otel
+TEMPLATES := ./templates/fiber-api ./templates/gin-api ./templates/grpc-service ./templates/worker ./templates/cli ./templates/sdk-client
 
-.PHONY: test lint bench examples tidy fmt
+.PHONY: test lint bench examples templates tidy fmt
 
 test:
 	@for m in $(MODULES); do echo "==> $$m"; (cd $$m && go test -race -count=1 ./...) || exit 1; done
@@ -18,6 +19,9 @@ bench:
 examples:
 	go run ./examples/basic
 	LOG_FORMAT=console LOG_LEVEL=trace go run ./examples/basic
+
+templates:
+	@for m in $(TEMPLATES); do echo "==> $$m"; (cd $$m && GOWORK=off go vet ./... && GOWORK=off go test -count=1 ./...) || exit 1; done
 
 tidy:
 	@for m in $(MODULES); do (cd $$m && go mod tidy) || exit 1; done

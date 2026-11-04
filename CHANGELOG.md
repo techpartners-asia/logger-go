@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `templates/`: copy-ready starter projects with logging wired in: Fiber API
+  (GORM, Resty), Gin API (pgx), gRPC service, background worker, CLI, and an
+  SDK client with `logtest` tests. Each is a standalone module.
+
 ## [0.3.0] - 2026-11-04
 
 ### Added

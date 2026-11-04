@@ -1,0 +1,13 @@
+// Separate from the root go.work so the templates build against the published
+// logger-go versions, as they do once copied out, and their newer dependencies
+// do not leak into the adapter builds.
+go 1.25.0
+
+use (
+	./cli
+	./fiber-api
+	./gin-api
+	./grpc-service
+	./sdk-client
+	./worker
+)

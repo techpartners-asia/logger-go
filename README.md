@@ -21,6 +21,7 @@ modules under `adapters/` so importing the logger never drags in Fiber or gRPC.
 ## Contents
 
 - [Quick start](#quick-start)
+- [Templates: start a new service](#templates-start-a-new-service)
 - [Production: ship logs to Loki](#production-ship-logs-to-loki)
 - [Output formats](#output-formats)
 - [Configuration](#configuration)
@@ -100,6 +101,26 @@ Development (`LOG_FORMAT=console`), colored when stderr is a terminal:
 ```
 
 Try it: `go run ./examples/basic` and `LOG_FORMAT=console LOG_LEVEL=trace go run ./examples/basic`.
+
+---
+
+## Templates: start a new service
+
+[`templates/`](templates/README.md) has starter projects with logging already
+wired in. Copy one and rename it:
+
+| You are building | Template |
+|---|---|
+| REST API on Fiber with GORM and outbound HTTP | [`fiber-api`](templates/fiber-api/main.go) |
+| REST API on Gin or `net/http` with pgx | [`gin-api`](templates/gin-api/main.go) |
+| gRPC service or client | [`grpc-service`](templates/grpc-service/main.go) |
+| Queue consumer, background jobs, cron | [`worker`](templates/worker/main.go) |
+| Command-line tool or one-off script | [`cli`](templates/cli/main.go) |
+| SDK or shared library | [`sdk-client`](templates/sdk-client/payments.go) |
+
+The [templates README](templates/README.md) also covers other project types
+(Kafka consumers, Lambda, migrations, gateways), sample output, and a
+Dockerfile and compose file that ship logs to Loki.
 
 ---
 
@@ -940,6 +961,7 @@ make test        # all modules, race detector
 make lint        # go vet + gofmt (+ golangci-lint if installed)
 make bench
 make examples
+make templates   # vet and test the starter projects
 ```
 
 The repo is a Go workspace (`go.work`) so adapters build against the local

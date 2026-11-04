@@ -43,6 +43,25 @@ jobs:
       - run: go vet ./... && go test -race -count=1 ./...
         working-directory: adapters/${{ matrix.module }}
 
+  templates:
+    name: template ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [fiber-api, gin-api, grpc-service, worker, cli, sdk-client]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: templates/${{ matrix.module }}/go.sum
+      # Outside the workspace: templates build against the published versions,
+      # exactly as they do once copied out of the repo.
+      - run: go vet ./... && go test -count=1 ./...
+        working-directory: templates/${{ matrix.module }}
+        env:
+          GOWORK: off
+
   lint:
     runs-on: ubuntu-latest
     steps:

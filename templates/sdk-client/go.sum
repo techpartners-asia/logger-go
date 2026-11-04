@@ -1,0 +1,8 @@
+github.com/techpartners-asia/logger-go v0.3.0 h1:7uIFD23oxUfOiZRRyEP/KXXmbCvH/zaKgUDSTGDJXRU=
+github.com/techpartners-asia/logger-go v0.3.0/go.mod h1:YEj7NJjCF7AcCZ1NSX+sRamGlf6AiJRh0JjV2OXOqMM=
+github.com/techpartners-asia/logger-go/adapters/resty v0.2.0 h1:et5jB/WhdBAP8RGDi7bawAXeBqm18EagiMmRf09Ohfg=
+github.com/techpartners-asia/logger-go/adapters/resty v0.2.0/go.mod h1:IlzKlLx7aZ4d7FTBOTV295QOKvVS/ITZG6htdumgYAE=
+golang.org/x/net v0.58.0 h1:ynWG7rqYi4ccpTEuPZ2QGWHktVEM9DMCj9yzDE0Q7To=
+golang.org/x/net v0.58.0/go.mod h1:YwCddHnFlT7eLQqVprV19OnhLGtc5xOKgE0RyqgfWAU=
+resty.dev/v3 v3.0.0-rc.4 h1:n3360yEcFiyrX5Vkc9XG3Y8kMM24alRBxJ9Ev1mLmqs=
+resty.dev/v3 v3.0.0-rc.4/go.mod h1:NTOerrC/4T7/FE6tXIZGIysXXBdgNqwMZuKtxpea9NM=
