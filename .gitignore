@@ -7,10 +7,3 @@ coverage.*
 .DS_Store
 go.work.sum
 logs/
-
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key
-.beads/proxieddb/
-*.gate.lock*
