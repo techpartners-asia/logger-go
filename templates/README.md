@@ -14,7 +14,7 @@ out of this repo and build it as is.
 | SDK or shared library other services import | [`sdk-client`](sdk-client/payments.go) | Resty, `logtest` |
 
 Using Echo, chi or gorilla/mux? Start from `gin-api` and swap the middleware
-line for the one in the [adapters section](../README.md#adapters). Every HTTP
+line for the one in the [adapters section](../docs/adapters.md#adapters). Every HTTP
 adapter writes the same fields.
 
 ## Start a new service from a template
@@ -107,7 +107,7 @@ The core module has no dependencies, so it works anywhere Go runs.
 ## Deploying
 
 On a server with Alloy and Loki, follow the
-[Loki section](../README.md#production-ship-logs-to-loki). In short:
+[Loki section](../docs/production.md#production-ship-logs-to-loki). In short:
 
 ```dockerfile
 FROM golang:1.25 AS build
