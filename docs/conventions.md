@@ -14,6 +14,7 @@ the package as `logger.Key*`.
 | `duration_ms` | Numeric milliseconds via `logger.Duration`. |
 | `method`, `path`, `status`, `bytes`, `remote_addr`, `user_agent` | HTTP. |
 | `logger` | Component name from `Named`. |
+| `action`, `outcome`, `error_code` | Audit events. See [Logging policy](logging-policy.md). |
 
 Rules of thumb:
 
@@ -24,7 +25,8 @@ Rules of thumb:
 - `Error` is for things a human should look at. Expected failures (validation,
   404s) are `Warn` or `Info`.
 - `Fatal` only in `main` during startup. Elsewhere return errors.
-- Always enable `WithRedaction()` in services that touch customer data.
+- Always enable `WithRedaction()` in services that touch customer data, and
+  add your PII keys. See [Logging policy](logging-policy.md).
 
 ## Migrating from zap / zerolog / logrus
 

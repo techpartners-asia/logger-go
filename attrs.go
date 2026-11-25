@@ -35,6 +35,17 @@ const (
 	KeyRemoteAddr = "remote_addr"
 	KeyUserAgent  = "user_agent"
 	KeyBytes      = "bytes"
+
+	// Audit keys: who did what, and how it ended. See docs/logging-policy.md.
+	KeyAction    = "action"
+	KeyOutcome   = "outcome"
+	KeyErrorCode = "error_code"
+)
+
+// Values for KeyOutcome.
+const (
+	OutcomeSuccess = "success"
+	OutcomeFailure = "failure"
 )
 
 // Err returns an attribute for an error under the "error" key. A nil error

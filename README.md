@@ -29,6 +29,7 @@ modules under `adapters/` so importing the logger never drags in Fiber or gRPC.
 | [HTTP middleware and adapters](docs/adapters.md) | net/http, Fiber, Gin, Echo, chi, mux, gRPC, Resty, GORM, pgx, OpenTelemetry |
 | [Testing](docs/testing.md) | Asserting on logs with `logtest` |
 | [Conventions](docs/conventions.md) | Service conventions and migrating from zap, zerolog, logrus |
+| [Logging policy](docs/logging-policy.md) | What the company procedure says to log, never log and retain, and how to do it here |
 | [Architecture](docs/architecture.md) | How the handler chain is built, and benchmarks |
 | [Development](docs/development.md) | Building, testing and releasing this repo |
 
